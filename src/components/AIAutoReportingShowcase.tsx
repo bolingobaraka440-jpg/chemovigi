@@ -102,7 +102,7 @@ export function AIAutoReportingShowcase({ onOpenChat }: AIAutoReportingShowcaseP
           </h2>
           
           <p className="text-xl md:text-2xl text-blue-100 max-w-4xl mx-auto leading-relaxed mb-4">
-            The world's first <strong className="text-teal-300">fully automated adverse drug reaction reporting system</strong> 
+            The world's first <strong className="text-teal-300">fully automated adverse drug reaction reporting system </strong>
             that analyzes, classifies, and routes reports in real-time without human intervention.
           </p>
           

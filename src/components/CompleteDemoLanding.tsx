@@ -154,28 +154,31 @@ export function CompleteDemoLanding({ onGetStarted, onLogin }: CompleteDemoLandi
             >
               {/* Badge */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-                className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-blue-200 rounded-full px-4 py-2 mb-6 shadow-lg"
-              >
-                <Sparkles className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-semibold text-slate-700">Professional Pharmacovigilance Platform</span>
-              </motion.div>
+  initial={{ opacity: 0, scale: 0.8 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{ delay: 0.2 }}
+  className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-blue-200 rounded-full px-3 py-1.5 mb-4 shadow"
+>
+  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+  <span className="text-xs font-semibold text-slate-700">
+    Professional Pharmacovigilance Platform
+  </span>
+</motion.div>
 
-              <h1 className="text-5xl md:text-7xl font-bold text-slate-800 leading-tight mb-6">
-                Improving Drug Safety
-                <br />
-                Through{' '}
-                <span className="bg-gradient-to-r from-blue-600 via-teal-600 to-green-600 bg-clip-text text-transparent animate-pulse">
-                  Better Reporting
-                </span>
-              </h1>
+<h1 className="text-xl md:text-2xl font-bold text-slate-800 leading-snug mb-4">
+  Improving Drug Safety
+  <br />
+  Through{" "}
+  <span className="bg-gradient-to-r from-blue-600 via-teal-600 to-green-600 bg-clip-text text-transparent">
+    Better Reporting
+  </span>
+</h1>
 
-              <p className="text-xl md:text-2xl text-slate-600 mb-10 leading-relaxed">
-                A complete platform for adverse event reporting, chemotherapy side effect monitoring, 
-                and patient safety — powered by AI and trusted by healthcare professionals.
-              </p>
+<p className="text-sm md:text-base text-slate-600 mb-6 leading-relaxed">
+  A complete platform for adverse event reporting, chemotherapy side effect monitoring, 
+  and patient safety — powered by AI and trusted by healthcare professionals.
+</p>
+
 
               {/* Problem & Solution Cards */}
               <div className="grid md:grid-cols-2 gap-6 mb-10">
