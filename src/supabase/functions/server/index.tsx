@@ -40,43 +40,31 @@ app.post("/make-server-c55d007a/auth/register", async (c) => {
     const { email, password, name, role } = await c.req.json();
 
     if (!email || !password || !name || !role) {
-      return c.json({ error: 'Missing required fields' }, 400);
+      return c.json({ error: "Missing required fields" }, 400);
     }
 
-    // Create user with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    // ✅ Use signUp (NOT admin.createUser)
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      user_metadata: { name, role },
-      email_confirm: false, // 🔥 REQUIRE EMAIL VERIFICATION - User must verify email before login!
+      options: {
+        data: { name, role },
+        emailRedirectTo: "http://localhost:3000", // 🔥 CHANGE to your Vercel domain later
+      },
     });
 
-    if (authError) {
-      console.log('Registration error:', authError);
-      return c.json({ error: authError.message }, 400);
+    if (error) {
+      console.log("Registration error:", error);
+      return c.json({ error: error.message }, 400);
     }
 
-    // Store additional user data in KV store
-    await kv.set(`user:${authData.user.id}`, {
-      id: authData.user.id,
-      email,
-      name,
-      role,
-      createdAt: new Date().toISOString(),
-    });
-
     return c.json({
-      message: 'Registration successful! Please check your email to verify your account before logging in.',
-      user: {
-        id: authData.user.id,
-        email,
-        name,
-        role,
-      }
+      message: "Registration successful. Check your email to confirm your account.",
+      user: data.user,
     });
   } catch (error) {
-    console.log('Registration error:', error);
-    return c.json({ error: 'Registration failed: ' + error.message }, 500);
+    console.log("Registration error:", error);
+    return c.json({ error: "Registration failed: " + error.message }, 500);
   }
 });
 
@@ -124,76 +112,39 @@ app.post("/make-server-c55d007a/auth/login", async (c) => {
 // Submit new ADR report
 app.post("/make-server-c55d007a/reports/submit", async (c) => {
   try {
-    const accessToken = c.req.header('Authorization')?.split(' ')[1];
-    
-    // Verify user authentication
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+
     const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+
     if (!user || authError) {
-      return c.json({ error: 'Unauthorized' }, 401);
+      return c.json({ error: "Unauthorized" }, 401);
     }
 
     const reportData = await c.req.json();
 
-    // Generate report ID
-    const reportCountKey = 'report_count';
-    const currentCount = (await kv.get(reportCountKey)) || 0;
-    const newReportId = currentCount + 1;
-    await kv.set(reportCountKey, newReportId);
+    // ✅ Save into Supabase DB table
+    const { data, error } = await supabase
+      .from("reports")
+      .insert([
+        {
+          user_id: user.id,
+          ...reportData,
+          status: "Under Review",
+          date_reported: new Date().toISOString(),
+        },
+      ]);
 
-    // Store report
-    const report = {
-      id: newReportId,
-      userId: user.id,
-      ...reportData,
-      dateReported: new Date().toISOString(),
-      status: 'Under Review',
-    };
-
-    await kv.set(`report:${newReportId}`, report);
-
-    return c.json({
-      message: 'Report submitted successfully',
-      reportId: newReportId,
-      report,
-    });
-  } catch (error) {
-    console.log('Report submission error:', error);
-    return c.json({ error: 'Failed to submit report: ' + error.message }, 500);
-  }
-});
-
-// Get user's reports
-app.get("/make-server-c55d007a/reports/user", async (c) => {
-  try {
-    const accessToken = c.req.header('Authorization')?.split(' ')[1];
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
-    if (!user || authError) {
-      return c.json({ error: 'Unauthorized' }, 401);
+    if (error) {
+      console.log("DB insert error:", error);
+      return c.json({ error: "Failed to save report" }, 500);
     }
 
-    // Get all reports with prefix
-    const allReports = await kv.getByPrefix('report:');
-    
-    // 🔥 DEBUG: Log all reports
-    console.log(`[DEBUG] Total reports in DB: ${allReports.length}`);
-    console.log(`[DEBUG] User ID: ${user.id}`);
-    
-    // Filter reports for this user
-    const userReports = allReports.filter((report: any) => {
-      const matches = report.userId === user.id;
-      if (matches) {
-        console.log(`[DEBUG] Found user report #${report.id}, status: ${report.status}, reviewedAt: ${report.reviewedAt || 'N/A'}`);
-      }
-      return matches;
+    return c.json({
+      message: "Report submitted successfully",
     });
-
-    console.log(`[DEBUG] User has ${userReports.length} reports`);
-
-    return c.json({ reports: userReports });
   } catch (error) {
-    console.log('Fetch reports error:', error);
-    return c.json({ error: 'Failed to fetch reports: ' + error.message }, 500);
+    console.log("Report submission error:", error);
+    return c.json({ error: "Failed to submit report: " + error.message }, 500);
   }
 });
 
