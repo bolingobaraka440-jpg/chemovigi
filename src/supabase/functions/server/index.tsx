@@ -111,32 +111,36 @@ app.post("/make-server-c55d007a/auth/login", async (c) => {
 
 // ================= REPORTS =================
 
-// Submit new ADR report
+// Submit new ADR report (SAVE TO SUPABASE TABLE)
 app.post("/make-server-c55d007a/reports/submit", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    const { data: { user }, error: authError } =
+      await supabase.auth.getUser(accessToken);
+
     if (!user || authError) {
       return c.json({ error: "Unauthorized" }, 401);
     }
 
     const { drug_name, side_effect, severity } = await c.req.json();
 
+    // 🔥 INSERT INTO SUPABASE TABLE (MATCHING YOUR SCHEMA)
     const { data, error } = await supabase
       .from("reports")
-      .insert({
-        patient_id: user.id,
-        drug_name,
-        side_effect,
-        severity,
-        status: "pending",
-      })
-      .select()
-      .single();
+      .insert([
+        {
+          patient_id: user.id,
+          drug_name: drug_name,
+          side_effect: side_effect,
+          severity: severity, // must be mild/moderate/severe
+          status: "pending",
+        },
+      ])
+      .select();
 
     if (error) {
-      console.log("Insert report error:", error);
+      console.log("DB insert error:", error);
       return c.json({ error: error.message }, 500);
     }
 
@@ -150,7 +154,6 @@ app.post("/make-server-c55d007a/reports/submit", async (c) => {
     return c.json({ error: "Failed to submit report: " + error.message }, 500);
   }
 });
-
 
 // Get all reports (clinician/admin)
 app.get("/make-server-c55d007a/reports/all", async (c) => {
