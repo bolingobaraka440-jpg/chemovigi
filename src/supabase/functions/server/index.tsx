@@ -58,6 +58,26 @@ app.post("/make-server-c55d007a/auth/register", async (c) => {
       return c.json({ error: error.message }, 400);
     }
 
+    // AFTER SIGNUP: create role-specific record in patients or clinicians table
+    try {
+      const userId = data.user?.id;
+      if (userId && role === 'patient') {
+        const { data: patientData, error: patientError } = await supabase
+          .from('patients')
+          .insert([{ id: userId, name, email }]);
+        if (patientError) console.log('Create patient row error:', patientError);
+        else console.log('Created patient row:', patientData);
+      } else if (userId && role === 'clinician') {
+        const { data: clinicianData, error: clinicianError } = await supabase
+          .from('clinicians')
+          .insert([{ id: userId, name, email }]);
+        if (clinicianError) console.log('Create clinician row error:', clinicianError);
+        else console.log('Created clinician row:', clinicianData);
+      }
+    } catch (e) {
+      console.log('Post-registration insert exception:', e);
+    }
+
     return c.json({
       message: "Registration successful. Check your email to confirm your account.",
       user: data.user,
@@ -115,11 +135,15 @@ app.post("/make-server-c55d007a/auth/login", async (c) => {
 app.post("/make-server-c55d007a/reports/submit", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
+    console.log('reports/submit called, accessToken present:', !!accessToken);
 
     const { data: { user }, error: authError } =
       await supabase.auth.getUser(accessToken);
 
+    if (authError) console.log('auth.getUser error:', authError);
+
     if (!user || authError) {
+      console.log('Unauthorized request to reports/submit — user:', user);
       return c.json({ error: "Unauthorized" }, 401);
     }
 

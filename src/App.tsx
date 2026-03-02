@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { projectId } from './utils/supabase/info';
 import { CompleteDemoLanding } from './components/CompleteDemoLanding';
 import { NewLandingPage } from './components/NewLandingPage';
 import { ModernLandingPage } from './components/ModernLandingPage';
@@ -67,6 +68,35 @@ export default function App() {
 
   const addReport = (report: Report) => {
     setReports([report, ...reports]);
+    // Persist report to backend Supabase Edge Function
+    (async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-c55d007a`;
+        const res = await fetch(`${API_BASE_URL}/reports/submit`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            drug_name: report.drug,
+            side_effect: report.symptoms,
+            severity: String(report.severity).toLowerCase(),
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          console.error('Failed to persist report:', err);
+        } else {
+          const data = await res.json().catch(() => null);
+          console.log('Report persisted:', data);
+        }
+      } catch (e) {
+        console.error('Error submitting report to backend:', e);
+      }
+    })();
   };
 
   const updateReportStatus = (reportId: number, newStatus: 'Under Review' | 'Reviewed' | 'Closed' | 'Urgent') => {
